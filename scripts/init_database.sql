@@ -13,7 +13,7 @@ Running this script will drop the entire 'DataWarehouse' database if it exists.
 All data in the database will be permanently deleted. Proceed with caution
 and ensure you have proper backups before running this script.
 */
-/*
+
 -- Step 1: Switch to the master database to perform system operations
 USE master;
 GO
