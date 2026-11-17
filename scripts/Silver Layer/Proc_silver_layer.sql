@@ -132,17 +132,6 @@ Where Cst_Firstname != Trim(Cst_Firstname)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 ---- Cst_Prd_Info 
 
 --- Check For Nulls Or Duplicates In Primary Key 
@@ -153,3 +142,70 @@ Select
 From Bronze.Crm_Prd_Info
 Group By Prd_Id
 Having Count(*) >1 Or Prd_Id Is Null 
+
+
+
+SELECT 
+    prd_id ,
+    replace(SUBSTRING(prd_key,1,5),'-','_')cat_id ,
+    SUBSTRING(prd_key,7,len(prd_key))prd_key,
+    prd_nm ,
+    prd_cost ,
+    prd_line , 
+    prd_start_dt ,
+    prd_end_dt 
+from bronze.crm_prd_info crm 
+where SUBSTRING(prd_key,7,len(prd_key)) not in 
+(   select 
+    distinct sls_prd_key
+    from bronze.crm_sales_details
+)
+
+
+SELECT 
+    prd_id ,
+    replace(SUBSTRING(prd_key,1,5),'-','_')cat_id ,
+    SUBSTRING(prd_key,7,len(prd_key))prd_key,
+    prd_nm ,
+    prd_cost ,
+    prd_line , 
+    prd_start_dt ,
+    prd_end_dt 
+from bronze.crm_prd_info crm 
+
+
+---Check For Unwanted Speaces 
+--- Experctation : No Result  
+SELECT 
+prd_nm
+from bronze.crm_prd_info 
+where prd_nm !=trim(prd_nm)
+
+---Check For nulls or negative numbers 
+--- Experctation : No Result  
+SELECT prd_cost
+from bronze.crm_prd_info
+where prd_cost is null or prd_cost <0 
+
+Select 
+    Prd_Id ,
+    Replace(Substring(Prd_Key,1,5),'-','_')Cat_Id ,
+    Substring(Prd_Key,7,Len(Prd_Key))Prd_Key,
+    Prd_Nm ,
+    Coalesce(Prd_Cost,0)Prd_Cost ,
+    Case Upper(Trim(Prd_Line))  
+    When 'M' Then 'Mountain'
+    When 'R' Then 'Road'
+    When 'S' Then 'Other Sales'
+    When 'T' Then 'Touring'
+    Else 'N/A'
+    End  Prd_Line ,
+    Prd_Start_Dt ,
+    Prd_End_Dt 
+From Bronze.Crm_Prd_Info Crm 
+
+
+--Data Standardization & Consistency
+SELECT 
+ distinct prd_line
+from bronze.crm_prd_info
