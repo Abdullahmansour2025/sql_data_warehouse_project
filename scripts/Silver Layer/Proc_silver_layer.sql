@@ -5,12 +5,12 @@ Go ;
 --- Check For Nulls Or Duplicates In Primary Key 
 --- Experctation : No Result  
 
-SELECT 
-    cst_id , 
-    count(*)
-from bronze.crm_cust_info
-group by cst_id
-having count(*) > 1  
+Select 
+    Cst_Id , 
+    Count(*)
+From Bronze.Crm_Cust_Info
+Group By Cst_Id
+Having Count(*) > 1  
 
 
 Select * ,
@@ -29,74 +29,74 @@ From
 Where Flag_Last != 1
 
 
----check for unwanted speaces 
+---Check For Unwanted Speaces 
 --- Experctation : No Result  
 
 Select Cst_Firstname
 From Bronze.Crm_Cust_Info
-Where Cst_Firstname != Trim (cst_FirstName)
+Where Cst_Firstname != Trim (Cst_Firstname)
 
-SELECT cst_gndr
-from bronze.crm_cust_info
-where cst_gndr != trim(cst_gndr)
+Select Cst_Gndr
+From Bronze.Crm_Cust_Info
+Where Cst_Gndr != Trim(Cst_Gndr)
 
-SELECT cst_marital_status
-from bronze.crm_cust_info
-where cst_marital_status != trim(cst_marital_status)
+Select Cst_Marital_Status
+From Bronze.Crm_Cust_Info
+Where Cst_Marital_Status != Trim(Cst_Marital_Status)
 
-SELECT 
-trim(cst_firstname) as cst_firstname ,
-trim(cst_lastname) as cst_lastname 
-from bronze.crm_cust_info
-
-
-
---data standardization & consistency
-SELECT DISTINCT cst_marital_status
-FROM BRONZE.crm_cust_info
-
-SELECT DISTINCT CST_GNDR  
-FROM BRONZE.crm_cust_info 
+Select 
+Trim(Cst_Firstname) As Cst_Firstname ,
+Trim(Cst_Lastname) As Cst_Lastname 
+From Bronze.Crm_Cust_Info
 
 
+
+--Data Standardization & Consistency
+Select Distinct Cst_Marital_Status
+From Bronze.Crm_Cust_Info
+
+Select Distinct Cst_Gndr  
+From Bronze.Crm_Cust_Info 
 
 
 
 
-INSERT INTO Silver.crm_cust_info
+
+
+Insert Into Silver.Crm_Cust_Info
 (
-    CST_ID ,
-    CST_KEY ,
-    CST_FIRSTNAME ,
-    CST_LASTNAME ,
-    CST_MARITAL_STATUS ,
-    CST_GNDR ,
-    CST_CREATE_DATE
+    Cst_Id ,
+    Cst_Key ,
+    Cst_Firstname ,
+    Cst_Lastname ,
+    Cst_Marital_Status ,
+    Cst_Gndr ,
+    Cst_Create_Date
 )
-SELECT 
-    CST_ID ,
-    CST_KEY , 
-    trim(cst_firstname) as cst_firstname ,
-    trim(cst_lastname) as cst_lastname ,
-    case
-        when UPPER(TRIM(cst_marital_status)) = 'M' THEN 'Married'
-        when UPPER(TRIM(cst_marital_status)) = 'S' THEN 'Single'
-        else 'N/A' 
-    end as cst_marital_status , 
-    case
-        when UPPER(TRIM(cst_gndr)) = 'M' THEN 'Male' 
-        when UPPER (TRIM(cst_gndr)) = 'F' then 'Female'
-        ELSE 'N/A' 
-    end  as cst_gndr ,
-    cst_create_date
-from 
+Select 
+    Cst_Id ,
+    Cst_Key , 
+    Trim(Cst_Firstname) As Cst_Firstname ,
+    Trim(Cst_Lastname) As Cst_Lastname ,
+    Case
+        When Upper(Trim(Cst_Marital_Status)) = 'M' Then 'Married'
+        When Upper(Trim(Cst_Marital_Status)) = 'S' Then 'Single'
+        Else 'N/A' 
+    End As Cst_Marital_Status , 
+    Case
+        When Upper(Trim(Cst_Gndr)) = 'M' Then 'Male' 
+        When Upper (Trim(Cst_Gndr)) = 'F' Then 'Female'
+        Else 'N/A' 
+    End  As Cst_Gndr ,
+    Cst_Create_Date
+From 
 (
-    SELECT *,
-    ROW_NUMBER()OVER(PARTITION BY CST_ID ORDER BY Cst_Create_Date DESC ) AS FLAG_LAST
-    FROM BRONZE.crm_cust_info
-    WHERE cst_id IS NOT NULL 
+    Select *,
+    Row_Number()Over(Partition By Cst_Id Order By Cst_Create_Date Desc ) As Flag_Last
+    From Bronze.Crm_Cust_Info
+    Where Cst_Id Is Not Null 
 )T 
-WHERE FLAG_LAST = 1 
+Where Flag_Last = 1 
 
 
 
@@ -106,27 +106,27 @@ WHERE FLAG_LAST = 1
 
 
 Select *
-from silver.crm_cust_info
+From Silver.Crm_Cust_Info
 
 --- Check For Nulls Or Duplicates In Primary Key 
-SELECT 
-    cst_id ,
-    count(*)
-from silver.crm_cust_info
-group by cst_id 
-having count(*) >1
+Select 
+    Cst_Id ,
+    Count(*)
+From Silver.Crm_Cust_Info
+Group By Cst_Id 
+Having Count(*) >1
 
 
-SELECT *,
-ROW_NUMBER()OVER(PARTITION BY CST_ID ORDER BY Cst_Create_Date DESC ) AS FLAG_LAST
-FROM silver.crm_cust_info
-WHERE cst_id IS  NULL 
+Select *,
+Row_Number()Over(Partition By Cst_Id Order By Cst_Create_Date Desc ) As Flag_Last
+From Silver.Crm_Cust_Info
+Where Cst_Id Is  Null 
 
 --- Experctation : No Result  
 
-select cst_firstname 
-from silver.crm_cust_info
-where cst_firstname != trim(cst_firstname)
+Select Cst_Firstname 
+From Silver.Crm_Cust_Info
+Where Cst_Firstname != Trim(Cst_Firstname)
 
 
 
@@ -143,13 +143,13 @@ where cst_firstname != trim(cst_firstname)
 
 
 
----- CST_PRD_INFO 
+---- Cst_Prd_Info 
 
 --- Check For Nulls Or Duplicates In Primary Key 
 --- Experctation : No Result  
-SELECT 
-    prd_id , 
-    count(*)
-from bronze.crm_prd_info
-group by prd_id
-having count(*) >1 or prd_id is null 
+Select 
+    Prd_Id , 
+    Count(*)
+From Bronze.Crm_Prd_Info
+Group By Prd_Id
+Having Count(*) >1 Or Prd_Id Is Null 
