@@ -209,3 +209,22 @@ From Bronze.Crm_Prd_Info Crm
 SELECT 
  distinct prd_line
 from bronze.crm_prd_info
+
+
+--- Check For Invalid Date Orders 
+--- الداتا بايظه معكوسة ---
+select  
+    prd_key ,
+    prd_cost,
+    prd_start_dt  , 
+    LEAD( prd_start_dt -1) over(partition by prd_key order by prd_start_dt asc)prd_end_dt
+from bronze.crm_prd_info
+where prd_key in ('AC-HE-HL-U509-R','AC-HE-HL-U509')
+
+
+
+select 
+min(sls_order_dt),
+max(sls_order_dt) 
+from bronze.crm_sales_details
+where sls_prd_key like('HL-U509-R%')
