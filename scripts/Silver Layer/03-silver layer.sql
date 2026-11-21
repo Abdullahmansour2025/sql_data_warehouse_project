@@ -24,12 +24,13 @@ DROP Table if Exists  silver.crm_prd_info
 GO 
 CREATE table silver.crm_prd_info (
     prd_id       int , 
+    cat_id       NVARCHAR(50) ,
     prd_key      NVARCHAR(50) ,
     prd_nm       NVARCHAR(50) ,
     prd_cost     int , 
     prd_line     NVARCHAR(50),
-    prd_start_dt DATETIME ,
-    prd_end_dt   DATETIME ,
+    prd_start_dt DATE ,
+    prd_end_dt   DATE ,
     dwh_create_date DATETIME2 DEFAULT getdate()
 
 );
