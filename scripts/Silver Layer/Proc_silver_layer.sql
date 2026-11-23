@@ -213,18 +213,224 @@ from bronze.crm_prd_info
 
 --- Check For Invalid Date Orders 
 --- الداتا بايظه معكوسة ---
-select  
-    prd_key ,
-    prd_cost,
-    prd_start_dt  , 
-    LEAD( prd_start_dt -1) over(partition by prd_key order by prd_start_dt asc)prd_end_dt
-from bronze.crm_prd_info
+SELECT 
+prd_key ,
+prd_cost ,
+prd_start_dt  ,
+LEAD(prd_start_dt )OVER(PARTITION BY Prd_Key ORDER BY Prd_Start_Dt ASC )- 1 Prd_End_Dt
+FROM BRONZE.crm_prd_info
 where prd_key in ('AC-HE-HL-U509-R','AC-HE-HL-U509')
 
 
 
+TRUNCATE table silver.crm_prd_info
+INSERT into Silver.crm_prd_info 
+(
+    prd_id        , 
+    cat_id        ,
+    prd_key       ,
+    prd_nm        ,
+    prd_cost      , 
+    prd_line      ,
+    prd_start_dt  ,
+    prd_end_dt     
+)
+Select 
+    Prd_Id ,
+    Replace(Substring(Prd_Key,1,5),'-','_')Cat_Id ,  -- extract category id  
+    Substring(Prd_Key,7,Len(Prd_Key))Prd_Key ,  -- extract product id 
+    Prd_Nm ,
+    Coalesce(Prd_Cost,0)Prd_Cost ,
+    Case Upper(Trim(Prd_Line))  
+    When 'M' Then 'Mountain'
+    When 'R' Then 'Road'
+    When 'S' Then 'Other Sales'
+    When 'T' Then 'Touring'
+    Else 'N/A'
+    End  Prd_Line , -- map product line codes to descriptive values 
+    Cast(Prd_Start_Dt As Date )Prd_Start_Dt,
+    Cast(Lead(Prd_Start_Dt )Over(Partition By Prd_Key Order By Prd_Start_Dt Asc )- 1 As Date) Prd_End_Dt -- calculate end date as one day before the next star date 
+From Bronze.Crm_Prd_Info  
+
+--- Check For Nulls Or Duplicates In Primary Key 
+--- Experctation : No Result  
+SELECT 
+prd_id,
+count(*)
+from silver.crm_prd_info
+group by prd_id 
+having count(*) >1 or prd_id is null 
+
+
+
+
+---Check For Unwanted Speaces 
+--- Experctation : No Result  
 select 
-min(sls_order_dt),
-max(sls_order_dt) 
+prd_nm
+from silver.crm_prd_info
+where prd_nm != trim(prd_nm)
+
+
+
+---Check For nulls or negative numbers 
+--- Experctation : No Result  
+select 
+prd_cost 
+from silver.crm_prd_info
+where  prd_cost < 0 or prd_cost is null 
+
+
+--Data Standardization & Consistency
+SELECT distinct  prd_line 
+from silver.crm_prd_info
+
+
+--- Check For Invalid Date Orders 
+select *
+from silver.crm_prd_info 
+where prd_start_dt > prd_end_dt
+
+
+--- crm_sales_details 
+SELECT 
+sls_ord_num , 
+sls_prd_key , 
+sls_cust_id , 
+case
+    when sls_order_dt <= 0 or len(sls_order_dt) != 8 then null
+    else sls_order_dt
+end 
+sls_order_dt ,
+sls_ship_dt , 
+sls_due_dt ,
+sls_sales ,
+sls_quantity ,
+sls_price  
+from bronze.crm_sales_details 
+
+
+SELECT 
+sls_ord_num 
+from bronze.crm_sales_details 
+where sls_ord_num != trim (sls_ord_num)
+
+
+SELECT 
+sls_prd_key
+from bronze.crm_sales_details 
+where sls_prd_key not in (select prd_key from silver.crm_prd_info )
+
+SELECT 
+sls_cust_id
+from bronze.crm_sales_details 
+where sls_cust_id not in (select cst_id from silver.crm_cust_info )
+
+
+--- Check For Invalid Date Orders 
+Select 
+Nullif(Sls_Order_Dt ,0)  As Sls_Order_Dt
+From Bronze.Crm_Sales_Details
+Where Sls_Order_Dt <= 0 
+Or Len (Sls_Order_Dt ) != 8
+Or Sls_Order_Dt > 20500101 
+Or Sls_Order_Dt < 19500101
+
+
+SELECT 
+sls_due_dt
 from bronze.crm_sales_details
-where sls_prd_key like('HL-U509-R%')
+where  len (sls_due_dt) != 8 or sls_due_dt <=0 or sls_due_dt >'20500101' or sls_due_dt <'19000101' or sls_due_dt is null
+
+
+SELECT *
+from bronze.crm_sales_details
+where sls_order_dt > sls_ship_dt  or sls_ship_dt > sls_due_dt
+
+
+SELECT 
+sls_ord_num , 
+sls_prd_key , 
+sls_cust_id , 
+case
+    when sls_order_dt <= 0 or len(sls_order_dt) != 8 then null
+    else cast(cast(sls_order_dt as nvarchar ) as date)
+end sls_order_dt ,
+case
+    when sls_ship_dt <= 0 or len(sls_ship_dt) != 8 then null
+    else cast(cast(sls_ship_dt as nvarchar ) as date)
+end sls_ship_dt ,
+case
+    when sls_due_dt <= 0 or len(sls_due_dt) != 8 then null
+    else cast(cast(sls_due_dt as nvarchar ) as date)
+end sls_due_dt  ,
+sls_sales ,
+sls_quantity ,
+sls_price  
+from bronze.crm_sales_details 
+
+
+select distinct 
+sls_sales as old_sls_sales,
+case
+    when sls_sales is null or sls_sales <= 0 or sls_sales != sls_quantity * abs(sls_price) then sls_quantity * abs(sls_price) 
+    else sls_sales
+end sls_sales ,
+sls_quantity ,
+sls_price as old_sls_price ,
+case
+    when sls_price is null or sls_price <= 0 then sls_sales / nullif(sls_quantity ,0 )
+    else sls_price
+end sls_price  
+from bronze.crm_sales_details 
+where sls_sales  != sls_quantity*sls_price 
+or sls_sales is null or sls_quantity is null or sls_price is null 
+or sls_sales <=0 or sls_quantity <=0  or sls_price <=0 
+order by sls_sales ,sls_quantity ,sls_price   
+
+
+
+TRUNCATE table silver.crm_Sales_Details
+insert into  silver.crm_sales_details
+(
+    sls_ord_num ,
+    sls_prd_key,
+    sls_cust_id ,
+    sls_order_dt ,
+    sls_ship_dt , 
+    sls_due_dt ,
+    sls_sales ,
+    sls_quantity , 
+    sls_price
+)
+SELECT 
+sls_ord_num , 
+sls_prd_key , 
+sls_cust_id , 
+case
+    when sls_order_dt <= 0 or len(sls_order_dt) != 8 then null
+    else cast(cast(sls_order_dt as nvarchar ) as date)
+end sls_order_dt ,
+case
+    when sls_ship_dt <= 0 or len(sls_ship_dt) != 8 then null
+    else cast(cast(sls_ship_dt as nvarchar ) as date)
+end sls_ship_dt ,
+case
+    when sls_due_dt <= 0 or len(sls_due_dt) != 8 then null
+    else cast(cast(sls_due_dt as nvarchar ) as date)
+end sls_due_dt  ,
+case
+    when sls_sales is null or sls_sales <= 0 or sls_sales != sls_quantity * abs(sls_price) then sls_quantity * abs(sls_price) 
+    else sls_sales
+end sls_sales ,
+sls_quantity ,
+case
+    when sls_price is null or sls_price <= 0 then sls_sales / nullif(sls_quantity ,0 )
+    else sls_price
+end sls_price  
+from bronze.crm_sales_details 
+
+
+
+select *
+from silver.crm_sales_details
