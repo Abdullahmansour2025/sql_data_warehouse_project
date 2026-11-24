@@ -94,3 +94,28 @@ where sls_sales  != sls_quantity*sls_price
 or sls_sales is null or sls_quantity is null or sls_price is null 
 or sls_sales <=0 or sls_quantity <=0  or sls_price <=0 
 order by sls_sales ,sls_quantity ,sls_price   
+
+
+-- ====================================================================
+-- Checking 'Silver.erp_CUST_AZ12 '
+-- ====================================================================
+---Identify out_of_range dates 
+SELECT
+BDATE 
+from silver.erp_CUST_AZ12 
+WHERE BDATE <'1930-01-01' or bdate >getdate()
+
+
+--Data Standardization & Consistency
+Select 
+Distinct gen
+From Silver.erp_CUST_AZ12
+
+-- ====================================================================
+-- Checking 'Silver.erp_LOC_A101'
+-- ====================================================================
+--Data Standardization & Consistency
+SELECT DISTINCT 
+CNTRY
+FROM SILVER.erp_LOC_A101
+ORDER BY CNTRY ASC

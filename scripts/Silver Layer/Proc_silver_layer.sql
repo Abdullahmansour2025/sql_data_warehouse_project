@@ -434,3 +434,160 @@ from bronze.crm_sales_details
 
 select *
 from silver.crm_sales_details
+
+
+
+----- erp_CUST_AZ12 
+
+select *
+from bronze.erp_CUST_AZ12 
+where cid like '%AW00011000%'
+
+select *
+from silver.crm_cust_info 
+where cst_key like '%AW00011000%'
+
+
+
+SELECT
+case
+    when cid like 'NAS%' THEN SUBSTRING(CID , 4 , LEN(CID)) 
+    ELSE CID 
+end CID ,
+BDATE ,
+GEN 
+from bronze.erp_CUST_AZ12 
+WHERE 
+    case
+        when cid like 'NAS%' THEN SUBSTRING(CID , 4 , LEN(CID)) 
+        ELSE CID 
+    end NOT IN (SELECT DISTINCT CST_KEY FROM SILVER.crm_cust_info )
+
+
+---Identify out_of_range dates 
+
+SELECT
+BDATE 
+from bronze.erp_CUST_AZ12 
+WHERE BDATE <'1930-01-01' or bdate >getdate()
+
+
+
+SELECT
+    case
+        when cid like 'NAS%' THEN SUBSTRING(CID , 4 , LEN(CID)) 
+        ELSE CID 
+    end CID ,
+    case    
+        when bdate > getdate() then null 
+        else bdate 
+    end bdate ,
+    case
+        when GEN = 'M' THEN 'Male' 
+        when GEN = 'F' THEN 'Female' 
+        when gen = ''  THEN  NULL 
+        ELSE GEN 
+    end GEN 
+from bronze.erp_CUST_AZ12 
+
+
+--Data Standardization & Consistency
+SELECT distinct 
+GEN 
+from bronze.erp_CUST_AZ12 
+
+
+SELECT DISTINCT 
+GEN ,
+  case 
+        when  UPPER(TRIM (GEN)) IN  ('M','MALE')  THEN 'Male' 
+        when UPPER(TRIM (GEN)) IN  ('F','FEMALE')  THEN 'Female'  
+        ELSE 'N/A' 
+    end GEN 
+from bronze.erp_CUST_AZ12 
+
+
+
+TRUNCATE TABLE  Silver.erp_CUST_AZ12 
+INSERT INTO SILVER.erp_CUST_AZ12 
+(
+    cid , 
+    bdate ,
+    gen 
+)
+SELECT
+    case
+        when cid like 'NAS%' THEN SUBSTRING(CID , 4 , LEN(CID)) 
+        ELSE CID 
+    end CID ,
+    case    
+        when bdate > getdate() then null 
+        else bdate 
+    end bdate ,
+    case 
+        when  UPPER(TRIM (GEN)) IN  ('M','MALE')  THEN 'Male' 
+        when UPPER(TRIM (GEN)) IN  ('F','FEMALE')  THEN 'Female'  
+        ELSE 'N/A' 
+    end GEN 
+from bronze.erp_CUST_AZ12 
+
+
+SELECT *
+from silver.erp_CUST_AZ12
+
+
+
+--- erp_loc_a101 
+
+SELECT 
+cid , 
+case
+    when cid  like 'AW-%' then REPLACE(cid ,'-','')
+    else cid 
+end 
+CNTRY 
+from bronze.erp_LOC_A101 
+where
+case
+    when cid  like 'AW-%' then REPLACE(cid ,'-','')
+    else cid 
+end not in (select cst_key from silver.crm_cust_info)
+
+
+SELECT 
+cid , 
+case
+    when cid  like 'AW-%' then REPLACE(cid ,'-','')
+    else cid 
+end ,
+CNTRY 
+from bronze.erp_LOC_A101 
+
+
+SELECT 
+cid
+from bronze.erp_LOC_A101 
+where cid is null 
+
+
+
+TRUNCATE TABLE SILVER.erp_LOC_A101 
+INSERT INTO SILVER.erp_LOC_A101  
+(
+    CID ,
+    CNTRY
+)
+Select 
+    Replace(cid,'-','') As cid  , 
+    Case 
+        When Trim(Cntry) ='DE' Then 'Germany' 
+        When Trim(Cntry) In('US' ,'USA') Then 'United States'
+        When Trim(Cntry) = '' Or Trim(Cntry) Is Null Then 'N/A'
+        Else Trim(Cntry)
+    End Cntry 
+From Bronze.Erp_Loc_A101
+
+SELECT *
+FROM SILVER.erp_LOC_A101
+
+
