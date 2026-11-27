@@ -61,8 +61,9 @@ From Bronze.Crm_Cust_Info
 
 
 
-
-
+print'>>Truncating Table : silver.Crm_Cust_Info';
+TRUNCATE table silver.crm_cust_info
+print'>>Inserting Data Into : silver.Crm_Cust_Info';
 Insert Into Silver.Crm_Cust_Info
 (
     Cst_Id ,
@@ -223,7 +224,9 @@ where prd_key in ('AC-HE-HL-U509-R','AC-HE-HL-U509')
 
 
 
+print'>>Truncating Table : silver.crm_prd_info';
 TRUNCATE table silver.crm_prd_info
+print'>>Inserting Data Into : silver.crm_prd_info';
 INSERT into Silver.crm_prd_info 
 (
     prd_id        , 
@@ -390,7 +393,9 @@ order by sls_sales ,sls_quantity ,sls_price
 
 
 
+print'>>Truncating Table : silver.crm_Sales_Details';
 TRUNCATE table silver.crm_Sales_Details
+print'>>Inserting Data Into : silver.crm_sales_details';
 insert into  silver.crm_sales_details
 (
     sls_ord_num ,
@@ -508,7 +513,9 @@ from bronze.erp_CUST_AZ12
 
 
 
+print'>>Truncating Table : Silver.erp_CUST_AZ12';
 TRUNCATE TABLE  Silver.erp_CUST_AZ12 
+print'>>Inserting Data Into : SILVER.erp_CUST_AZ12';
 INSERT INTO SILVER.erp_CUST_AZ12 
 (
     cid , 
@@ -571,7 +578,9 @@ where cid is null
 
 
 
+print'>>Truncating Table : SILVER.erp_LOC_A101';
 TRUNCATE TABLE SILVER.erp_LOC_A101 
+print'>>Inserting Data Into : SILVER.erp_LOC_A101';
 INSERT INTO SILVER.erp_LOC_A101  
 (
     CID ,
@@ -591,3 +600,34 @@ SELECT *
 FROM SILVER.erp_LOC_A101
 
 
+
+--- erp_PX_CAT_G1V2
+
+SELECT distinct id
+from bronze.erp_PX_CAT_G1V2
+where id not in (select cat_id from silver.crm_prd_info) 
+
+SELECT *
+from bronze.erp_PX_CAT_G1V2 
+where cat !=trim(cat) or SUBCAT != trim(SUBCAT) or MAINTENANCE !=trim(MAINTENANCE)
+
+
+print'>>Truncating Table : silver.Erp_Px_Cat_G1v2';
+TRUNCATE table silver.Erp_Px_Cat_G1v2 
+print'>>Inserting Data Into : silver.erp_PX_CAT_G1V2';
+insert into silver.erp_PX_CAT_G1V2 (
+    id , 
+    cat ,
+    subcat ,
+    maintenance
+)
+Select 
+    id , 
+    cat ,
+    subcat ,
+    maintenance
+From Bronze.Erp_Px_Cat_G1v2 
+
+
+select *
+from silver.erp_PX_CAT_G1V2
